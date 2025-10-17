@@ -1,0 +1,36 @@
+Pertinencia y relevancia:
+  peso: 10
+  pistas: ["Justificación","Relevancia","Problema"]
+Claridad del problema y objetivos:
+  peso: 10
+  pistas: ["Planteamiento del problema","Objetivo general","Objetivos específicos","Pregunta de investigación"]
+Originalidad / aporte:
+  peso: 8
+  pistas: ["Estado del arte","Marco teórico"]
+Solidez metodológica:
+  peso: 14
+  pistas: ["Metodología","Diseño y enfoque","Técnicas de análisis"]
+Calidad de datos / muestra:
+  peso: 10
+  pistas: ["Datos","Muestra","Muestreo","Instrumentos"]
+Factibilidad y cronograma:
+  peso: 8
+  pistas: ["Cronograma","Plan de actividades"]
+Consideraciones éticas:
+  peso: 6
+  pistas: ["Ética"]
+Impacto esperado:
+  peso: 8
+  pistas: ["Resultados esperados","Impacto"]
+Plan de difusión / transferencia:
+  peso: 6
+  pistas: ["Plan de difusión"]
+Presupuesto y sostenibilidad:
+  peso: 6
+  pistas: ["Presupuesto","Recursos"]
+Alineación institucional y normativa:
+  peso: 6
+  pistas: ["Institucional","Lineamientos","Normativa"]
+Bibliografía actualizada:
+  peso: 8
+  pistas: ["Bibliografía","Referencias","2020","2021","2022","2023","2024","2025"]
