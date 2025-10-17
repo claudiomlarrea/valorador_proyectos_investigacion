@@ -22,8 +22,9 @@ try:
 except Exception:
     Document = None
 
-APP_TITLE = "UCCuyo · Valorador de Proyectos (v3 – evidencia estricta)"
-APP_VERSION = "v3.0"
+APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
+APP_VERSION = ""
+
 
 DEFAULT_CRITERIA = {
   "Pertinencia y relevancia": {"peso": 10, "pistas": ["justificación","relevancia","problema"]},
