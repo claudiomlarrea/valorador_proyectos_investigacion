@@ -1,6 +1,33 @@
 
 import io, yaml, textwrap, hashlib
 from datetime import datetime
+
+
+    try:
+        paras = list(doc.paragraphs)
+        i = 0
+        while i < len(paras):
+            p = paras[i]
+            txt = (p.text or "").strip()
+            if txt.lower() == (heading_text or "").lower():
+                # borrar el heading
+                _delete_paragraph(p)
+                # borrar párrafos hasta el próximo heading
+                # se considera heading si el nombre de estilo arranca con 'Heading' o 'Título' (Word en español)
+                j = i  # ya avanzamos al siguiente por cómo funciona la lista original
+                # debemos refrescar la referencia a doc.paragraphs porque se van borrando
+                while j < len(doc.paragraphs):
+                    pj = doc.paragraphs[j]
+                    style_name = (getattr(getattr(pj, "style", None), "name", "") or "").lower()
+                    if style_name.startswith("heading") or style_name.startswith("título"):
+                        break
+                    _delete_paragraph(pj)
+                break
+            i += 1
+    except Exception:
+        # Silencioso: nunca rompe la exportación
+        pass
+
 import streamlit as st
 
 # Parsing libs
@@ -145,7 +172,6 @@ def make_word(criteria_cfg, puntajes: dict, porcentaje: float, result: str, nomb
     styles.font.size = Pt(11)
 
     # Encabezado institucional simple
-    h = doc.add_paragraph("Universidad Católica de Cuyo – Secretaría de Investigación")
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
     h_format = h.runs[0].font
     h_format.size = Pt(12)
@@ -185,7 +211,6 @@ def make_word(criteria_cfg, puntajes: dict, porcentaje: float, result: str, nomb
     doc.add_paragraph("Aspectos a mejorar: " + (", ".join(mejoras) if mejoras else "No se identifican aspectos críticos."))
 
     doc.add_paragraph("")
-    doc.add_heading("Extracto de evidencia del documento", level=2)
     doc.add_paragraph(extracto[:2000])
 
     with io.BytesIO() as buffer:
