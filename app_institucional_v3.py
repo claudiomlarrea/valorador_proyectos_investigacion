@@ -1,7 +1,19 @@
 
 import io, re, hashlib
 from datetime import datetime
+import streamlit as st
+import pandas as pd
 
+# Parsing libs
+try:
+    from docx import Document as DocxDocument
+except Exception:
+    DocxDocument = None
+
+try:
+    import pdfplumber
+except Exception:
+    pdfplumber = None
 
 try:
     from docx import Document
@@ -155,6 +167,7 @@ def make_word(criteria_cfg, puntajes, porcentaje, result, nombre_archivo, extrac
     styles.font.name = 'Times New Roman'
     styles.font.size = Pt(11)
 
+    h = doc.add_paragraph("Universidad Católica de Cuyo – Secretaría de Investigación")
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     doc.add_heading("Valoración de Proyecto de Investigación", level=1)
@@ -188,6 +201,11 @@ def make_word(criteria_cfg, puntajes, porcentaje, result, nombre_archivo, extrac
     doc.add_heading("Síntesis", level=2)
     doc.add_paragraph("Fortalezas: " + (", ".join(fortalezas) if fortalezas else "No se destacan fortalezas específicas."))
     doc.add_paragraph("Ausencias/Aspectos a mejorar: " + (", ".join(ausencias) if ausencias else "Sin ausencias detectadas por palabras clave estrictas."))
+
+    doc.add_paragraph("")
+    doc.add_heading("Extracto de evidencia del documento", level=2)
+    doc.add_paragraph(extracto[:2000])
+
     with io.BytesIO() as buffer:
         doc.save(buffer)
         return buffer.getvalue()
