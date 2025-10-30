@@ -3,45 +3,6 @@ import io, re, hashlib
 from datetime import datetime
 
 
-    try:
-        paras = list(doc.paragraphs)
-        i = 0
-        while i < len(paras):
-            p = paras[i]
-            txt = (p.text or "").strip()
-            if txt.lower() == (heading_text or "").lower():
-                # borrar el heading
-                _delete_paragraph(p)
-                # borrar párrafos hasta el próximo heading
-                # se considera heading si el nombre de estilo arranca con 'Heading' o 'Título' (Word en español)
-                j = i  # ya avanzamos al siguiente por cómo funciona la lista original
-                # debemos refrescar la referencia a doc.paragraphs porque se van borrando
-                while j < len(doc.paragraphs):
-                    pj = doc.paragraphs[j]
-                    style_name = (getattr(getattr(pj, "style", None), "name", "") or "").lower()
-                    if style_name.startswith("heading") or style_name.startswith("título"):
-                        break
-                    _delete_paragraph(pj)
-                break
-            i += 1
-    except Exception:
-        # Silencioso: nunca rompe la exportación
-        pass
-
-import streamlit as st
-import pandas as pd
-
-# Parsing libs
-try:
-    from docx import Document as DocxDocument
-except Exception:
-    DocxDocument = None
-
-try:
-    import pdfplumber
-except Exception:
-    pdfplumber = None
-
 try:
     from docx import Document
     from docx.shared import Pt
@@ -227,10 +188,6 @@ def make_word(criteria_cfg, puntajes, porcentaje, result, nombre_archivo, extrac
     doc.add_heading("Síntesis", level=2)
     doc.add_paragraph("Fortalezas: " + (", ".join(fortalezas) if fortalezas else "No se destacan fortalezas específicas."))
     doc.add_paragraph("Ausencias/Aspectos a mejorar: " + (", ".join(ausencias) if ausencias else "Sin ausencias detectadas por palabras clave estrictas."))
-
-    doc.add_paragraph("")
-    doc.add_paragraph(extracto[:2000])
-
     with io.BytesIO() as buffer:
         doc.save(buffer)
         return buffer.getvalue()
