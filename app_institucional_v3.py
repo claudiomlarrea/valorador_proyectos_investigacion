@@ -203,9 +203,6 @@ def make_word(criteria_cfg, puntajes, porcentaje, result, nombre_archivo, extrac
     doc.add_paragraph("Ausencias/Aspectos a mejorar: " + (", ".join(ausencias) if ausencias else "Sin ausencias detectadas por palabras clave estrictas."))
 
     doc.add_paragraph("")
-    doc.add_heading("Extracto de evidencia del documento", level=2)
-    doc.add_paragraph(extracto[:2000])
-
     with io.BytesIO() as buffer:
         doc.save(buffer)
         return buffer.getvalue()
