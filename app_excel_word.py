@@ -1,43 +1,6 @@
 
 import io, yaml, textwrap, hashlib
 from datetime import datetime
-
-
-# --- FIX AUTO: quitar SOLO la sección "Extracto de evidencia del documento" del Word ---
-def _delete_paragraph(p):
-    try:
-        p._element.getparent().remove(p._element)
-        p._p = p._element = None
-    except Exception:
-        pass
-
-def remove_section_by_heading(doc, heading_text="Extracto de evidencia del documento"):
-    """Elimina el heading 'Extracto de evidencia del documento' y su contenido hasta el siguiente heading."""
-    try:
-        paras = list(doc.paragraphs)
-        i = 0
-        while i < len(paras):
-            p = paras[i]
-            txt = (p.text or "").strip()
-            if txt.lower() == (heading_text or "").lower():
-                # borrar el heading
-                _delete_paragraph(p)
-                # borrar párrafos hasta el próximo heading
-                # se considera heading si el nombre de estilo arranca con 'Heading' o 'Título' (Word en español)
-                j = i  # ya avanzamos al siguiente por cómo funciona la lista original
-                # debemos refrescar la referencia a doc.paragraphs porque se van borrando
-                while j < len(doc.paragraphs):
-                    pj = doc.paragraphs[j]
-                    style_name = (getattr(getattr(pj, "style", None), "name", "") or "").lower()
-                    if style_name.startswith("heading") or style_name.startswith("título"):
-                        break
-                    _delete_paragraph(pj)
-                break
-            i += 1
-    except Exception:
-        # Silencioso: nunca rompe la exportación
-        pass
-
 import streamlit as st
 
 # Parsing libs
@@ -226,7 +189,6 @@ def make_word(criteria_cfg, puntajes: dict, porcentaje: float, result: str, nomb
     doc.add_paragraph(extracto[:2000])
 
     with io.BytesIO() as buffer:
-remove_section_by_heading(doc)
         doc.save(buffer)
         return buffer.getvalue()
 
