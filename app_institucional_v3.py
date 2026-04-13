@@ -22,7 +22,7 @@ except Exception:
 
 
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
-APP_VERSION = "v3.0 estable – evaluación manual"
+APP_VERSION = "v3.1 equilibrado"
 
 CRITERIOS = {
     "Pertinencia y relevancia": 10,
@@ -40,17 +40,17 @@ CRITERIOS = {
 }
 
 
-def categoria(porcentaje: float) -> str:
-    if porcentaje >= 70:
+def categoria(p):
+    if p >= 70:
         return "Aprobado"
-    elif porcentaje >= 50:
+    elif p >= 50:
         return "Aprobado con observaciones"
-    elif porcentaje >= 30:
+    elif p >= 30:
         return "Requiere reformulación"
     return "No aprobado"
 
 
-def parse_pdf(file_bytes: bytes) -> str:
+def parse_pdf(file_bytes):
     if pdfplumber is None:
         return ""
     partes = []
@@ -60,45 +60,42 @@ def parse_pdf(file_bytes: bytes) -> str:
     return "\n".join(partes)
 
 
-def parse_docx(file_bytes: bytes) -> str:
+def parse_docx(file_bytes):
     if DocxDocument is None:
         return ""
     doc = DocxDocument(io.BytesIO(file_bytes))
     return "\n".join(p.text for p in doc.paragraphs)
 
 
-def make_excel(scores: dict, porcentaje: float, resultado: str, nombre_archivo: str) -> bytes:
+def make_excel(scores, porcentaje, resultado, nombre):
     filas = []
-    for criterio, puntaje in scores.items():
-        filas.append({
-            "Criterio": criterio,
-            "Puntaje": puntaje
-        })
+    for c, v in scores.items():
+        filas.append({"Criterio": c, "Puntaje": v})
 
     df = pd.DataFrame(filas)
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, sheet_name="Resultados")
+        df.to_excel(writer, index=False)
 
         resumen = pd.DataFrame([{
-            "Archivo": nombre_archivo,
+            "Archivo": nombre,
             "Resultado": resultado,
             "Porcentaje": round(porcentaje, 2),
             "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
         }])
-        resumen.to_excel(writer, index=False, sheet_name="Resumen")
+        resumen.to_excel(writer, sheet_name="Resumen", index=False)
 
     return output.getvalue()
 
 
-def make_word(scores: dict, porcentaje: float, resultado: str, nombre_archivo: str) -> bytes:
+def make_word(scores, porcentaje, resultado, nombre):
     if Document is None:
         return b""
 
     doc = Document()
     doc.add_heading("Valoración de Proyecto de Investigación", 1)
-    doc.add_paragraph(f"Archivo: {nombre_archivo}")
+    doc.add_paragraph(f"Archivo: {nombre}")
     doc.add_paragraph(f"Resultado: {resultado}")
     doc.add_paragraph(f"Cumplimiento: {round(porcentaje, 2)}%")
 
@@ -107,10 +104,10 @@ def make_word(scores: dict, porcentaje: float, resultado: str, nombre_archivo: s
     hdr[0].text = "Criterio"
     hdr[1].text = "Puntaje"
 
-    for criterio, puntaje in scores.items():
+    for c, v in scores.items():
         row = table.add_row().cells
-        row[0].text = criterio
-        row[1].text = str(puntaje)
+        row[0].text = c
+        row[1].text = str(v)
 
     output = io.BytesIO()
     doc.save(output)
@@ -118,80 +115,76 @@ def make_word(scores: dict, porcentaje: float, resultado: str, nombre_archivo: s
 
 
 # ================= UI =================
-st.set_page_config(page_title=APP_TITLE, page_icon="🧮", layout="wide")
+
+st.set_page_config(page_title=APP_TITLE, layout="wide")
 
 st.title(APP_TITLE)
 st.caption(APP_VERSION)
 
-uploaded = st.file_uploader("Proyecto (PDF o DOCX)", type=["pdf", "docx"])
+archivo = st.file_uploader("Subir proyecto (PDF o DOCX)", type=["pdf", "docx"])
 
-if uploaded is None:
+if archivo is None:
     st.info("Esperando archivo…")
     st.stop()
 
-raw = uploaded.read()
+raw = archivo.read()
 
-# Lectura básica del archivo solo para validar que abre
 texto = ""
-if uploaded.name.lower().endswith(".pdf"):
-    if pdfplumber is None:
-        st.error("Falta instalar pdfplumber.")
-        st.stop()
+if archivo.name.endswith(".pdf"):
     texto = parse_pdf(raw)
-elif uploaded.name.lower().endswith(".docx"):
-    if DocxDocument is None:
-        st.error("Falta instalar python-docx.")
-        st.stop()
+else:
     texto = parse_docx(raw)
 
-if texto.strip():
-    st.success("Archivo leído correctamente.")
-else:
-    st.warning("El archivo se cargó, pero no se pudo extraer texto visible.")
+st.success("Archivo cargado correctamente")
 
-st.subheader("Evaluación manual")
+st.subheader("Evaluación")
 
 scores = {}
 total_max = sum(CRITERIOS.values())
 
 cols = st.columns(2)
 i = 0
+
 for criterio, peso in CRITERIOS.items():
     with cols[i % 2]:
-        st.markdown(f"**{criterio}** (máx. {peso})")
+        st.markdown(f"**{criterio}** (máx {peso})")
+
+        # 🔥 valor inicial equilibrado (75%)
+        valor_inicial = max(1, round(peso * 0.75))
+
         val = st.slider(
-            f"Puntaje - {criterio}",
-            min_value=0,
-            max_value=peso,
-            value=peso,
-            key=f"slider_{i}"
+            f"Puntaje {criterio}",
+            0,
+            peso,
+            valor_inicial,
+            key=f"s_{i}"
         )
+
         scores[criterio] = val
         st.divider()
+
     i += 1
 
+
 total = sum(scores.values())
-porcentaje = (total / total_max) * 100 if total_max else 0
+porcentaje = (total / total_max) * 100
 resultado = categoria(porcentaje)
 
-st.markdown(f"### Resultado: **{resultado}** — Cumplimiento **{round(porcentaje, 2)}%**")
+st.markdown(f"## Resultado: **{resultado}**")
+st.markdown(f"### Cumplimiento: **{round(porcentaje,2)}%**")
 
 c1, c2 = st.columns(2)
 
 with c1:
-    xls = make_excel(scores, porcentaje, resultado, uploaded.name)
     st.download_button(
-        "⬇️ Descargar resultados.xlsx",
-        data=xls,
-        file_name="valoracion_proyecto.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "⬇️ Descargar Excel",
+        make_excel(scores, porcentaje, resultado, archivo.name),
+        "resultado.xlsx"
     )
 
 with c2:
-    docx_bytes = make_word(scores, porcentaje, resultado, uploaded.name)
     st.download_button(
-        "⬇️ Descargar dictamen.docx",
-        data=docx_bytes,
-        file_name="dictamen_proyecto.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "⬇️ Descargar Word",
+        make_word(scores, porcentaje, resultado, archivo.name),
+        "resultado.docx"
     )
