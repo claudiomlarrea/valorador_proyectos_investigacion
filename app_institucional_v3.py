@@ -1,4 +1,5 @@
 import io
+import re
 from datetime import datetime
 
 import pandas as pd
@@ -22,52 +23,52 @@ except Exception:
 
 
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
-APP_VERSION = "v3.2 equilibrado con lectura automática"
+APP_VERSION = "v3.3 diferenciación real por contenido"
 
 CRITERIOS = {
     "Pertinencia y relevancia": {
         "peso": 10,
-        "pistas": ["justificación", "relevancia", "problema", "fundamentación"]
+        "pistas": ["justificación", "relevancia", "problema", "fundamentación", "necesidad"]
     },
     "Claridad del problema y objetivos": {
         "peso": 10,
-        "pistas": ["objetivo general", "objetivos específicos", "pregunta de investigación", "problema"]
+        "pistas": ["objetivo general", "objetivos específicos", "pregunta de investigación", "problema", "hipótesis"]
     },
     "Originalidad / aporte": {
         "peso": 8,
-        "pistas": ["estado del arte", "marco teórico", "antecedentes", "novedad", "aporte"]
+        "pistas": ["estado del arte", "marco teórico", "antecedentes", "novedad", "aporte", "vacancia"]
     },
     "Solidez metodológica": {
         "peso": 14,
-        "pistas": ["metodología", "diseño", "enfoque", "técnicas", "análisis de datos"]
+        "pistas": ["metodología", "diseño", "enfoque", "técnicas", "análisis de datos", "método"]
     },
     "Calidad de datos / muestra": {
         "peso": 10,
-        "pistas": ["muestra", "muestreo", "población", "instrumento", "datos"]
+        "pistas": ["muestra", "muestreo", "población", "instrumento", "datos", "recolección"]
     },
     "Factibilidad y cronograma": {
         "peso": 8,
-        "pistas": ["cronograma", "plan de actividades", "factibilidad", "recursos"]
+        "pistas": ["cronograma", "plan de actividades", "factibilidad", "recursos", "viabilidad", "etapas"]
     },
     "Consideraciones éticas": {
         "peso": 6,
-        "pistas": ["ética", "consentimiento", "confidencialidad", "comité de ética"]
+        "pistas": ["ética", "consentimiento", "confidencialidad", "comité de ética", "resguardo de datos"]
     },
     "Impacto esperado": {
         "peso": 8,
-        "pistas": ["impacto", "resultados esperados", "beneficios", "relevancia social"]
+        "pistas": ["impacto", "resultados esperados", "beneficios", "relevancia social", "aportes"]
     },
     "Plan de difusión / transferencia": {
         "peso": 6,
-        "pistas": ["difusión", "transferencia", "publicaciones", "divulgación", "congreso"]
+        "pistas": ["difusión", "transferencia", "publicaciones", "divulgación", "congreso", "artículo"]
     },
     "Presupuesto y sostenibilidad": {
         "peso": 6,
-        "pistas": ["presupuesto", "financiamiento", "costos", "recursos", "gastos"]
+        "pistas": ["presupuesto", "financiamiento", "costos", "recursos", "gastos", "sostenibilidad"]
     },
     "Alineación institucional y normativa": {
         "peso": 6,
-        "pistas": ["institucional", "normativa", "lineamientos", "universidad", "facultad"]
+        "pistas": ["institucional", "normativa", "lineamientos", "universidad", "facultad", "plan estratégico"]
     },
     "Bibliografía actualizada": {
         "peso": 8,
@@ -103,38 +104,8 @@ def parse_docx(file_bytes):
     return "\n".join(p.text for p in doc.paragraphs)
 
 
-def detectar_nivel_evidencia(texto, pistas):
-    """
-    Devuelve 0, 1 o 2:
-    0 = sin evidencia
-    1 = evidencia parcial
-    2 = evidencia suficiente
-    """
-    texto_low = texto.lower()
-    hits = 0
-    for pista in pistas:
-        if pista.lower() in texto_low:
-            hits += 1
-
-    if hits >= 3:
-        return 2
-    elif hits >= 1:
-        return 1
-    return 0
-
-
-def puntaje_inicial(peso, nivel):
-    """
-    Nivel 2: 85%
-    Nivel 1: 70%
-    Nivel 0: 50%
-    """
-    if nivel == 2:
-        return max(1, round(peso * 0.85))
-    elif nivel == 1:
-        return max(1, round(peso * 0.70))
-    else:
-        return max(1, round(peso * 0.50))
+def contar_ocurrencias(texto, termino):
+    return texto.lower().count(termino.lower())
 
 
 def extraer_evidencia(texto, pistas, max_items=2):
@@ -145,7 +116,7 @@ def extraer_evidencia(texto, pistas, max_items=2):
         idx = texto_low.find(pista.lower())
         if idx != -1:
             inicio = max(0, idx - 80)
-            fin = min(len(texto), idx + 160)
+            fin = min(len(texto), idx + 180)
             frag = texto[inicio:fin].replace("\n", " ").strip()
             if frag not in resultados:
                 resultados.append(frag)
@@ -153,6 +124,75 @@ def extraer_evidencia(texto, pistas, max_items=2):
             break
 
     return resultados
+
+
+def score_criterio(texto, criterio, meta):
+    """
+    Genera un puntaje inicial variable y mucho más fino.
+    Nunca deja todos iguales salvo que los proyectos sean realmente casi idénticos.
+    """
+    peso = meta["peso"]
+    pistas = meta["pistas"]
+    texto_low = texto.lower()
+
+    # 1) cuántas pistas distintas aparecen
+    hits_distintos = sum(1 for p in pistas if p.lower() in texto_low)
+
+    # 2) cuántas ocurrencias totales hay
+    ocurrencias_totales = sum(contar_ocurrencias(texto, p) for p in pistas)
+
+    # 3) densidad del texto (cantidad total de palabras)
+    n_palabras = max(1, len(texto.split()))
+
+    # 4) bonus por desarrollo textual general del proyecto
+    if n_palabras >= 5000:
+        bonus_longitud = 0.12
+    elif n_palabras >= 2500:
+        bonus_longitud = 0.08
+    elif n_palabras >= 1200:
+        bonus_longitud = 0.05
+    else:
+        bonus_longitud = 0.02
+
+    # 5) score base por criterio
+    proporcion_hits = hits_distintos / max(1, len(pistas))
+    factor_ocurrencias = min(1.0, ocurrencias_totales / max(2, len(pistas) * 2))
+
+    # base entre 35% y 90% del peso
+    score_relativo = 0.35 + (proporcion_hits * 0.30) + (factor_ocurrencias * 0.25) + bonus_longitud
+
+    # Ajuste especial para bibliografía actualizada
+    if criterio == "Bibliografía actualizada":
+        years = re.findall(r"\b(2021|2022|2023|2024|2025|2026)\b", texto)
+        years_unicos = len(set(years))
+        score_relativo += min(0.15, years_unicos * 0.03)
+
+    # Ajuste especial para presupuesto: detectar números o moneda
+    if criterio == "Presupuesto y sostenibilidad":
+        if re.search(r"(\$|usd|ars|presupuesto|costos|gastos|financiamiento)", texto_low):
+            score_relativo += 0.08
+        if re.search(r"\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?\b", texto):
+            score_relativo += 0.05
+
+    # Ajuste especial para metodología
+    if criterio == "Solidez metodológica":
+        if re.search(r"(cuantitativ|cualitativ|mixto|estadístic|entrevista|encuesta|análisis)", texto_low):
+            score_relativo += 0.08
+
+    # Ajuste especial para muestra/datos
+    if criterio == "Calidad de datos / muestra":
+        if re.search(r"(n=|muestra|muestreo|población|casos|participantes|instrumento)", texto_low):
+            score_relativo += 0.08
+
+    # Limitar entre 35% y 95%
+    score_relativo = max(0.35, min(0.95, score_relativo))
+
+    valor = round(peso * score_relativo)
+
+    # que nunca sea 0 si el criterio existe, pero tampoco siempre igual
+    valor = max(1, min(peso, valor))
+
+    return valor, hits_distintos, ocurrencias_totales
 
 
 def make_excel(scores, porcentaje, resultado, nombre):
@@ -239,20 +279,12 @@ i = 0
 for criterio, meta in CRITERIOS.items():
     with cols[i % 2]:
         peso = meta["peso"]
-        pistas = meta["pistas"]
 
-        nivel = detectar_nivel_evidencia(texto, pistas)
-        valor_inicial = puntaje_inicial(peso, nivel)
-        evidencias = extraer_evidencia(texto, pistas)
+        valor_inicial, hits_distintos, ocurrencias_totales = score_criterio(texto, criterio, meta)
+        evidencias = extraer_evidencia(texto, meta["pistas"])
 
         st.markdown(f"**{criterio}** (máx {peso})")
-
-        if nivel == 2:
-            st.success("Evidencia suficiente detectada.")
-        elif nivel == 1:
-            st.warning("Evidencia parcial detectada.")
-        else:
-            st.info("No se detectó evidencia clara. Revisar manualmente.")
+        st.caption(f"Pistas detectadas: {hits_distintos} | Ocurrencias: {ocurrencias_totales}")
 
         val = st.slider(
             f"Puntaje {criterio}",
