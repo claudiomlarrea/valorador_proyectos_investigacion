@@ -1,245 +1,193 @@
-
-import io, yaml, textwrap, hashlib
+import io
 from datetime import datetime
 import streamlit as st
+import pandas as pd
 
-# Parsing libs
+# Librerías de lectura
 try:
-    from docx import Document
-    from docx.shared import Pt, Inches
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
-except Exception:
-    Document = None
+    from docx import Document as DocxDocument
+except:
+    DocxDocument = None
 
 try:
     import pdfplumber
-except Exception:
+except:
     pdfplumber = None
 
 try:
-    from docx import Document as DocxDocument
-except Exception:
-    DocxDocument = None
-
-import pandas as pd
+    from docx import Document
+    from docx.shared import Pt
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+except:
+    Document = None
 
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
-APP_VERSION = "v1.1 – Excel & Word"
+APP_VERSION = "v2.0 – valoración flexible"
 
-# --- Criterios y pesos por defecto (ex ante) ---
-DEFAULT_CRITERIA = {
-  "Pertinencia y relevancia": {"peso": 10, "pistas": ["Justificación","Relevancia","Problema"]},
-  "Claridad del problema y objetivos": {"peso": 10, "pistas": ["Planteamiento del problema","Objetivo general","Objetivos específicos","Pregunta de investigación"]},
-  "Originalidad / aporte": {"peso": 8, "pistas": ["Estado del arte","Marco teórico","Novedad"]},
-  "Solidez metodológica": {"peso": 14, "pistas": ["Metodología","Diseño y enfoque","Técnicas de análisis"]},
-  "Calidad de datos / muestra": {"peso": 10, "pistas": ["Datos","Muestra","Muestreo","Instrumentos"]},
-  "Factibilidad y cronograma": {"peso": 8, "pistas": ["Cronograma","Plan de actividades","Recursos"]},
-  "Consideraciones éticas": {"peso": 6, "pistas": ["Ética","Consentimiento","Privacidad"]},
-  "Impacto esperado": {"peso": 8, "pistas": ["Resultados esperados","Impacto","Relevancia social"]},
-  "Plan de difusión / transferencia": {"peso": 6, "pistas": ["Plan de difusión","Transferencia","Publicaciones"]},
-  "Presupuesto y sostenibilidad": {"peso": 6, "pistas": ["Presupuesto","Recursos","Financiamiento"]},
-  "Alineación institucional y normativa": {"peso": 6, "pistas": ["Institucional","Lineamientos","Normativa"]},
-  "Bibliografía actualizada": {"peso": 8, "pistas": ["Bibliografía","Referencias","2021","2022","2023","2024","2025"]}
+# ---------------- CRITERIOS ----------------
+CRITERIA = {
+    "Pertinencia y relevancia": 10,
+    "Claridad del problema y objetivos": 10,
+    "Originalidad / aporte": 8,
+    "Solidez metodológica": 14,
+    "Calidad de datos / muestra": 10,
+    "Factibilidad y cronograma": 8,
+    "Consideraciones éticas": 6,
+    "Impacto esperado": 8,
+    "Plan de difusión / transferencia": 6,
+    "Presupuesto y sostenibilidad": 6,
+    "Alineación institucional y normativa": 6,
+    "Bibliografía actualizada": 8
 }
 
-THRESHOLDS = {
-    "Aprobado": (60, 1000),  # 60–100
-    "Aprobado con observaciones": (50, 60),
-    "No aprobado": (0, 50)
-}
+# ---------------- RESULTADO ----------------
+def categorize(p):
+    if p >= 70:
+        return "Aprobado"
+    elif p >= 50:
+        return "Aprobado con observaciones"
+    elif p >= 30:
+        return "Requiere reformulación"
+    else:
+        return "No aprobado"
 
-def categorize(porcentaje: float) -> str:
-    for label, (lo, hi) in THRESHOLDS.items():
-        if lo <= porcentaje < hi or (label == "Aprobado" and porcentaje == hi):
-            return label
-    return "No clasificado"
-
-def parse_docx(file_bytes: bytes) -> str:
+# ---------------- PARSE ----------------
+def parse_docx(file):
     if DocxDocument is None:
         return ""
-    bio = io.BytesIO(file_bytes)
-    doc = DocxDocument(bio)
+    doc = DocxDocument(io.BytesIO(file))
     return "\n".join(p.text for p in doc.paragraphs)
 
-def parse_pdf(file_bytes: bytes) -> str:
+def parse_pdf(file):
     if pdfplumber is None:
         return ""
-    parts = []
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        for pg in pdf.pages:
-            parts.append(pg.extract_text() or "")
-    return "\n".join(parts)
+    text = ""
+    with pdfplumber.open(io.BytesIO(file)) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+    return text
 
-def compute_auto_hints(text: str, criteria_cfg: dict) -> dict:
-    low = text.lower()
-    hints = {}
-    for crit, meta in criteria_cfg.items():
-        pistas = meta.get("pistas", [])
-        ev = []
-        for p in pistas:
-            if p.lower() in low:
-                # save a short snippet around the first occurrence
-                idx = low.find(p.lower())
-                a = max(0, idx-120)
-                b = min(len(text), idx+200)
-                ev.append(text[a:b].replace("\n", " "))
-        hints[crit] = ev[:2]
-    return hints
+# ---------------- UI ----------------
+def score_ui():
+    st.subheader("Evaluación del proyecto")
 
-def score_ui(criteria_cfg: dict):
-    total_peso = sum(int(v.get("peso", 0)) for v in criteria_cfg.values())
-    st.caption(f"Puntaje total posible: {total_peso} puntos (suma de pesos)")
-    puntajes = {}
+    scores = {}
+    total = 0
+    max_total = sum(CRITERIA.values())
+
     cols = st.columns(2)
+
     i = 0
-    for crit, meta in criteria_cfg.items():
+    for crit, peso in CRITERIA.items():
         with cols[i % 2]:
-            peso = int(meta.get("peso", 0))
-            st.markdown(f"**{crit}**  (peso {peso})")
-            val = st.slider("Puntaje asignado", 0, peso, int(round(peso*0.7)), key=f"score_{crit}")
-            obs = st.text_area("Observaciones", key=f"obs_{crit}", placeholder="Notas, fortalezas, debilidades, recomendaciones…")
-            if meta.get("evidencia"):
-                with st.expander("Evidencia sugerida (auto)", expanded=False):
-                    for e in meta["evidencia"]:
-                        st.code(e, language="markdown")
-            puntajes[crit] = {"asignado": val, "peso": peso, "observaciones": obs}
+            st.markdown(f"**{crit}** (máx {peso})")
+
+            val = st.slider(
+                "Puntaje",
+                0,
+                peso,
+                int(peso * 0.7),
+                key=crit
+            )
+
+            obs = st.text_area(
+                "Observaciones",
+                key=f"obs_{crit}"
+            )
+
+            scores[crit] = (val, obs)
+            total += val
             st.divider()
+
         i += 1
-    obtenido = sum(v["asignado"] for v in puntajes.values())
-    porcentaje = (obtenido / total_peso) * 100 if total_peso else 0.0
-    return puntajes, obtenido, porcentaje, total_peso
 
-def make_excel(criteria_cfg, puntajes: dict, porcentaje: float, result: str, nombre_archivo: str) -> bytes:
-    weights_df = []
-    for crit, meta in criteria_cfg.items():
-        peso = int(meta.get("peso", 0))
-        asignado = puntajes[crit]["asignado"]
-        aporte = round((asignado / peso) * peso if peso>0 else 0, 2)  # igual al asignado, se deja explícito
-        weights_df.append({
+    porcentaje = (total / max_total) * 100
+
+    return scores, porcentaje
+
+# ---------------- EXCEL ----------------
+def make_excel(scores, porcentaje, resultado):
+    data = []
+
+    for crit, (val, obs) in scores.items():
+        data.append({
             "Criterio": crit,
-            "Peso": peso,
-            "Puntaje asignado": asignado,
-            "Aporte (%)": round((asignado / sum(int(v.get('peso',0)) for v in criteria_cfg.values()))*100, 2),
-            "Observaciones": puntajes[crit]["observaciones"]
+            "Puntaje": val,
+            "Observaciones": obs
         })
-    df = pd.DataFrame(weights_df)
 
-    with io.BytesIO() as output:
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            df.to_excel(writer, index=False, sheet_name="Resultados")
-            resumen = pd.DataFrame([{
-                "Archivo": nombre_archivo,
-                "Resultado": result,
-                "Porcentaje total": round(porcentaje,2),
-                "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
-            }])
-            resumen.to_excel(writer, index=False, sheet_name="Resumen")
-        return output.getvalue()
+    df = pd.DataFrame(data)
 
-def make_word(criteria_cfg, puntajes: dict, porcentaje: float, result: str, nombre_archivo: str, extracto: str) -> bytes:
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Evaluación")
+
+        resumen = pd.DataFrame([{
+            "Resultado": resultado,
+            "Porcentaje": round(porcentaje, 2),
+            "Fecha": datetime.now()
+        }])
+
+        resumen.to_excel(writer, index=False, sheet_name="Resumen")
+
+    return output.getvalue()
+
+# ---------------- WORD ----------------
+def make_word(scores, porcentaje, resultado):
     if Document is None:
         return b""
+
     doc = Document()
-    styles = doc.styles['Normal']
-    styles.font.name = 'Times New Roman'
-    styles.font.size = Pt(11)
 
-    # Encabezado institucional simple
-    h = doc.add_paragraph("Universidad Católica de Cuyo – Secretaría de Investigación")
-    h.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    h_format = h.runs[0].font
-    h_format.size = Pt(12)
+    doc.add_heading("Valoración de Proyecto de Investigación", 1)
 
-    doc.add_heading("Valoración de Proyecto de Investigación", level=1)
-    meta = doc.add_paragraph()
-    meta.add_run(f"Archivo: ").bold = True
-    meta.add_run(nombre_archivo + "   ")
-    meta.add_run("Fecha: ").bold = True
-    meta.add_run(datetime.now().strftime("%Y-%m-%d %H:%M"))
+    doc.add_paragraph(f"Resultado: {resultado}")
+    doc.add_paragraph(f"Cumplimiento: {round(porcentaje,2)}%")
 
-    doc.add_paragraph("")
-    doc.add_paragraph(f"Dictamen: {result} — Cumplimiento: {round(porcentaje,2)}%")
-
-    doc.add_heading("Resultados por criterio", level=2)
-    table = doc.add_table(rows=1, cols=4)
+    table = doc.add_table(rows=1, cols=3)
     hdr = table.rows[0].cells
     hdr[0].text = "Criterio"
-    hdr[1].text = "Peso"
-    hdr[2].text = "Puntaje asignado"
-    hdr[3].text = "Observaciones"
+    hdr[1].text = "Puntaje"
+    hdr[2].text = "Observaciones"
 
-    for crit, meta in criteria_cfg.items():
+    for crit, (val, obs) in scores.items():
         row = table.add_row().cells
         row[0].text = crit
-        row[1].text = str(int(meta.get("peso",0)))
-        row[2].text = str(puntajes[crit]["asignado"])
-        row[3].text = puntajes[crit]["observaciones"] or ""
+        row[1].text = str(val)
+        row[2].text = obs
 
-    # Fortalezas y mejoras
-    fortalezas = [c for c in criteria_cfg if puntajes[c]["asignado"] >= int(criteria_cfg[c]["peso"]*0.75)]
-    mejoras = [c for c in criteria_cfg if puntajes[c]["asignado"] <= int(criteria_cfg[c]["peso"]*0.25)]
+    output = io.BytesIO()
+    doc.save(output)
+    return output.getvalue()
 
-    doc.add_paragraph("")
-    doc.add_heading("Síntesis", level=2)
-    doc.add_paragraph("Fortalezas: " + (", ".join(fortalezas) if fortalezas else "No se destacan fortalezas específicas."))
-    doc.add_paragraph("Aspectos a mejorar: " + (", ".join(mejoras) if mejoras else "No se identifican aspectos críticos."))
+# ---------------- APP ----------------
+st.set_page_config(page_title=APP_TITLE, layout="wide")
 
-    doc.add_paragraph("")
-    with io.BytesIO() as buffer:
-        doc.save(buffer)
-        return buffer.getvalue()
-
-# ================== UI ==================
-st.set_page_config(page_title=APP_TITLE, page_icon="🧮", layout="wide")
 st.title(APP_TITLE)
-st.caption("Cargá un proyecto (PDF/DOCX). Asigná puntajes por criterio y exportá Excel y Word con el dictamen.")
+st.caption("Versión flexible: el evaluador decide el puntaje")
 
-uploaded = st.file_uploader("Proyecto (PDF o DOCX)", type=["pdf", "docx"])
+file = st.file_uploader("Subir proyecto (PDF o DOCX)", type=["pdf", "docx"])
 
-if uploaded is None:
-    st.info("Esperando archivo…")
-    st.stop()
+if file:
+    content = file.read()
 
-raw = uploaded.read()
-sha = hashlib.sha256(raw).hexdigest()
-text = ""
+    if file.name.endswith(".pdf"):
+        text = parse_pdf(content)
+    else:
+        text = parse_docx(content)
 
-if uploaded.name.lower().endswith(".pdf"):
-    if pdfplumber is None:
-        st.error("Falta dependencia: pdfplumber")
-        st.stop()
-    text = parse_pdf(raw)
-else:
-    if DocxDocument is None:
-        st.error("Falta dependencia: python-docx")
-        st.stop()
-    text = parse_docx(raw)
+    scores, porcentaje = score_ui()
+    resultado = categorize(porcentaje)
 
-text_low = text.lower()
+    st.markdown(f"## Resultado: **{resultado}**")
+    st.markdown(f"### {round(porcentaje,2)} %")
 
-# Criterios
-criteria_cfg = DEFAULT_CRITERIA.copy()
-# Sugerencias automáticas de evidencia
-hints = compute_auto_hints(text, criteria_cfg)
-for c in criteria_cfg:
-    criteria_cfg[c]["evidencia"] = hints.get(c, [])
+    col1, col2 = st.columns(2)
 
-# UI de puntajes
-puntajes, obtenido, porcentaje, total_peso = score_ui(criteria_cfg)
+    with col1:
+        excel = make_excel(scores, porcentaje, resultado)
+        st.download_button("Descargar Excel", excel, "resultado.xlsx")
 
-# Resultado
-resultado = categorize(porcentaje)
-st.markdown(f"### Resultado: **{resultado}** — Cumplimiento **{round(porcentaje,2)}%**")
-
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("⬇️ Exportar Excel"):
-        xls = make_excel(criteria_cfg, puntajes, porcentaje, resultado, uploaded.name)
-        st.download_button("Descargar resultados.xlsx", data=xls, file_name="valoracion_proyecto.xlsx")
-with col2:
-    if st.button("⬇️ Exportar Word"):
-        docx_bytes = make_word(criteria_cfg, puntajes, porcentaje, resultado, uploaded.name, text[:4000])
-        st.download_button("Descargar dictamen.docx", data=docx_bytes, file_name="dictamen_proyecto.docx")
-
-st.divider()
-st.caption("Nota: Este valorador es ex ante. No se genera informe Markdown ni se muestran bloques de depuración.")
+    with col2:
+        word = make_word(scores, porcentaje, resultado)
+        st.download_button("Descargar Word", word, "resultado.docx")
