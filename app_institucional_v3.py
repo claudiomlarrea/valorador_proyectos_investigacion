@@ -22,21 +22,57 @@ except Exception:
 
 
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
-APP_VERSION = "v3.1 equilibrado"
+APP_VERSION = "v3.2 equilibrado con lectura automática"
 
 CRITERIOS = {
-    "Pertinencia y relevancia": 10,
-    "Claridad del problema y objetivos": 10,
-    "Originalidad / aporte": 8,
-    "Solidez metodológica": 14,
-    "Calidad de datos / muestra": 10,
-    "Factibilidad y cronograma": 8,
-    "Consideraciones éticas": 6,
-    "Impacto esperado": 8,
-    "Plan de difusión / transferencia": 6,
-    "Presupuesto y sostenibilidad": 6,
-    "Alineación institucional y normativa": 6,
-    "Bibliografía actualizada": 8,
+    "Pertinencia y relevancia": {
+        "peso": 10,
+        "pistas": ["justificación", "relevancia", "problema", "fundamentación"]
+    },
+    "Claridad del problema y objetivos": {
+        "peso": 10,
+        "pistas": ["objetivo general", "objetivos específicos", "pregunta de investigación", "problema"]
+    },
+    "Originalidad / aporte": {
+        "peso": 8,
+        "pistas": ["estado del arte", "marco teórico", "antecedentes", "novedad", "aporte"]
+    },
+    "Solidez metodológica": {
+        "peso": 14,
+        "pistas": ["metodología", "diseño", "enfoque", "técnicas", "análisis de datos"]
+    },
+    "Calidad de datos / muestra": {
+        "peso": 10,
+        "pistas": ["muestra", "muestreo", "población", "instrumento", "datos"]
+    },
+    "Factibilidad y cronograma": {
+        "peso": 8,
+        "pistas": ["cronograma", "plan de actividades", "factibilidad", "recursos"]
+    },
+    "Consideraciones éticas": {
+        "peso": 6,
+        "pistas": ["ética", "consentimiento", "confidencialidad", "comité de ética"]
+    },
+    "Impacto esperado": {
+        "peso": 8,
+        "pistas": ["impacto", "resultados esperados", "beneficios", "relevancia social"]
+    },
+    "Plan de difusión / transferencia": {
+        "peso": 6,
+        "pistas": ["difusión", "transferencia", "publicaciones", "divulgación", "congreso"]
+    },
+    "Presupuesto y sostenibilidad": {
+        "peso": 6,
+        "pistas": ["presupuesto", "financiamiento", "costos", "recursos", "gastos"]
+    },
+    "Alineación institucional y normativa": {
+        "peso": 6,
+        "pistas": ["institucional", "normativa", "lineamientos", "universidad", "facultad"]
+    },
+    "Bibliografía actualizada": {
+        "peso": 8,
+        "pistas": ["bibliografía", "referencias", "2021", "2022", "2023", "2024", "2025", "2026"]
+    },
 }
 
 
@@ -67,6 +103,58 @@ def parse_docx(file_bytes):
     return "\n".join(p.text for p in doc.paragraphs)
 
 
+def detectar_nivel_evidencia(texto, pistas):
+    """
+    Devuelve 0, 1 o 2:
+    0 = sin evidencia
+    1 = evidencia parcial
+    2 = evidencia suficiente
+    """
+    texto_low = texto.lower()
+    hits = 0
+    for pista in pistas:
+        if pista.lower() in texto_low:
+            hits += 1
+
+    if hits >= 3:
+        return 2
+    elif hits >= 1:
+        return 1
+    return 0
+
+
+def puntaje_inicial(peso, nivel):
+    """
+    Nivel 2: 85%
+    Nivel 1: 70%
+    Nivel 0: 50%
+    """
+    if nivel == 2:
+        return max(1, round(peso * 0.85))
+    elif nivel == 1:
+        return max(1, round(peso * 0.70))
+    else:
+        return max(1, round(peso * 0.50))
+
+
+def extraer_evidencia(texto, pistas, max_items=2):
+    texto_low = texto.lower()
+    resultados = []
+
+    for pista in pistas:
+        idx = texto_low.find(pista.lower())
+        if idx != -1:
+            inicio = max(0, idx - 80)
+            fin = min(len(texto), idx + 160)
+            frag = texto[inicio:fin].replace("\n", " ").strip()
+            if frag not in resultados:
+                resultados.append(frag)
+        if len(resultados) >= max_items:
+            break
+
+    return resultados
+
+
 def make_excel(scores, porcentaje, resultado, nombre):
     filas = []
     for c, v in scores.items():
@@ -76,7 +164,7 @@ def make_excel(scores, porcentaje, resultado, nombre):
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False)
+        df.to_excel(writer, index=False, sheet_name="Resultados")
 
         resumen = pd.DataFrame([{
             "Archivo": nombre,
@@ -130,27 +218,41 @@ if archivo is None:
 raw = archivo.read()
 
 texto = ""
-if archivo.name.endswith(".pdf"):
+if archivo.name.lower().endswith(".pdf"):
     texto = parse_pdf(raw)
 else:
     texto = parse_docx(raw)
 
-st.success("Archivo cargado correctamente")
+if texto.strip():
+    st.success("Archivo cargado correctamente")
+else:
+    st.warning("Se cargó el archivo, pero no se extrajo texto visible.")
 
 st.subheader("Evaluación")
 
 scores = {}
-total_max = sum(CRITERIOS.values())
+total_max = sum(meta["peso"] for meta in CRITERIOS.values())
 
 cols = st.columns(2)
 i = 0
 
-for criterio, peso in CRITERIOS.items():
+for criterio, meta in CRITERIOS.items():
     with cols[i % 2]:
+        peso = meta["peso"]
+        pistas = meta["pistas"]
+
+        nivel = detectar_nivel_evidencia(texto, pistas)
+        valor_inicial = puntaje_inicial(peso, nivel)
+        evidencias = extraer_evidencia(texto, pistas)
+
         st.markdown(f"**{criterio}** (máx {peso})")
 
-        # 🔥 valor inicial equilibrado (75%)
-        valor_inicial = max(1, round(peso * 0.75))
+        if nivel == 2:
+            st.success("Evidencia suficiente detectada.")
+        elif nivel == 1:
+            st.warning("Evidencia parcial detectada.")
+        else:
+            st.info("No se detectó evidencia clara. Revisar manualmente.")
 
         val = st.slider(
             f"Puntaje {criterio}",
@@ -160,11 +262,15 @@ for criterio, peso in CRITERIOS.items():
             key=f"s_{i}"
         )
 
+        if evidencias:
+            with st.expander("Evidencia sugerida"):
+                for ev in evidencias:
+                    st.write(ev)
+
         scores[criterio] = val
         st.divider()
 
     i += 1
-
 
 total = sum(scores.values())
 porcentaje = (total / total_max) * 100
