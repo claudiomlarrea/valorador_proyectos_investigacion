@@ -1,4 +1,5 @@
 import io
+import hashlib
 from datetime import datetime
 import streamlit as st
 import pandas as pd
@@ -22,7 +23,7 @@ except Exception:
     Document = None
 
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
-APP_VERSION = "v2.1 – valoración flexible ajustada"
+APP_VERSION = "v2.2 – valoración flexible con reinicio de sliders"
 
 DEFAULT_CRITERIA = {
     "Pertinencia y relevancia": {
@@ -115,10 +116,7 @@ def parse_pdf(file_bytes: bytes) -> str:
 
 def evidence_present(text: str, pistas: list[str]) -> bool:
     low = text.lower()
-    for kw in pistas:
-        if kw.lower() in low:
-            return True
-    return False
+    return any(kw.lower() in low for kw in pistas)
 
 
 def extract_snippets(text: str, pistas: list[str], max_snippets: int = 2) -> list[str]:
@@ -141,19 +139,26 @@ def extract_snippets(text: str, pistas: list[str], max_snippets: int = 2) -> lis
 
 
 def suggested_score(peso: int, hay_evidencia: bool) -> int:
-    """
-    Ajuste menos exigente:
-    - Con evidencia: 85% del peso
-    - Sin evidencia clara: 60% del peso
-    """
     if hay_evidencia:
         return max(0, min(peso, int(round(peso * 0.85))))
     return max(0, min(peso, int(round(peso * 0.60))))
 
 
-def score_ui(criteria_cfg: dict, text: str):
+def reset_widget_state(prefix: str):
+    keys_to_delete = [k for k in st.session_state.keys() if k.startswith(prefix)]
+    for k in keys_to_delete:
+        del st.session_state[k]
+
+
+def score_ui(criteria_cfg: dict, text: str, file_hash: str):
     total_peso = sum(int(v.get("peso", 0)) for v in criteria_cfg.values())
     st.caption(f"Puntaje total posible: {total_peso} puntos")
+
+    reset_prefix = f"{APP_VERSION}_{file_hash}_"
+
+    if st.button("Reiniciar puntajes sugeridos"):
+        reset_widget_state(reset_prefix)
+        st.rerun()
 
     puntajes = {}
     cols = st.columns(2)
@@ -176,18 +181,21 @@ def score_ui(criteria_cfg: dict, text: str):
                 st.warning("No se detectó evidencia textual clara. Se recomienda revisión manual del evaluador.")
                 obs_default = "La evidencia automática no fue clara; se recomienda revisión manual del evaluador."
 
+            slider_key = f"{reset_prefix}slider_{crit}"
+            obs_key = f"{reset_prefix}obs_{crit}"
+
             val = st.slider(
                 "Puntaje asignado",
                 min_value=0,
                 max_value=peso,
                 value=default_value,
-                key=f"slider_{crit}"
+                key=slider_key
             )
 
             obs = st.text_area(
                 "Observaciones",
-                key=f"obs_{crit}",
                 value=obs_default,
+                key=obs_key,
                 placeholder="Notas, fortalezas, debilidades, recomendaciones…"
             )
 
@@ -305,7 +313,6 @@ def make_word(criteria_cfg, puntajes, porcentaje, result, nombre_archivo):
         return buffer.getvalue()
 
 
-# ================== UI ==================
 st.set_page_config(page_title=APP_TITLE, page_icon="🧮", layout="wide")
 st.title(APP_TITLE)
 st.caption(f"{APP_VERSION}. La detección automática de evidencia es orientativa y el evaluador puede ajustar manualmente el puntaje.")
@@ -317,6 +324,7 @@ if uploaded is None:
     st.stop()
 
 raw = uploaded.read()
+file_hash = hashlib.sha256(raw).hexdigest()[:12]
 
 if uploaded.name.lower().endswith(".pdf"):
     if pdfplumber is None:
@@ -331,7 +339,7 @@ else:
 
 criteria_cfg = DEFAULT_CRITERIA.copy()
 
-puntajes, obtenido, porcentaje, total_peso = score_ui(criteria_cfg, text)
+puntajes, obtenido, porcentaje, total_peso = score_ui(criteria_cfg, text, file_hash)
 resultado = categorize(porcentaje)
 
 st.markdown(f"### Resultado: **{resultado}** — Cumplimiento **{round(porcentaje, 2)}%**")
