@@ -159,7 +159,7 @@ def score_criterio(texto, criterio, meta):
     factor_ocurrencias = min(1.0, ocurrencias_totales / max(2, len(pistas) * 2))
 
     # base entre 35% y 90% del peso
-    score_relativo = 0.35 + (proporcion_hits * 0.30) + (factor_ocurrencias * 0.25) + bonus_longitud
+    score_relativo = 0.15 + (proporcion_hits * 0.35) + (factor_ocurrencias * 0.30) + bonus_longitud
 
     # Ajuste especial para bibliografía actualizada
     if criterio == "Bibliografía actualizada":
