@@ -1,36 +1,63 @@
+Identificación del proyecto:
+  peso: 4
+  pistas: ["Denominación","Tipo de Proyecto","Duración","Área disciplinar","Unidad Académica"]
+
+Dirección del proyecto:
+  peso: 6
+  pistas: ["Director","Co-director","Cargo académico","Formación académica","Categoría de investigador"]
+
+Equipo de investigación:
+  peso: 6
+  pistas: ["Equipo de investigación","Integrantes","Funciones","Rol","Filiación"]
+
+Resumen del proyecto:
+  peso: 6
+  pistas: ["Resumen","Síntesis","Problema","Objetivo general","Metodología","Resultados esperados"]
+
+Fundamentación:
+  peso: 10
+  pistas: ["Fundamentación","Justificación","Antecedentes","Marco conceptual","Brecha de conocimiento","Valor agregado"]
+
 Pertinencia y relevancia:
   peso: 10
-  pistas: ["Justificación","Relevancia","Problema"]
-Claridad del problema y objetivos:
+  pistas: ["Relevancia","Importancia","Alineación","PEI","Plan Estratégico","Impacto institucional","Líneas prioritarias"]
+
+Problema y objetivos:
   peso: 10
-  pistas: ["Planteamiento del problema","Objetivo general","Objetivos específicos","Pregunta de investigación"]
-Originalidad / aporte:
+  pistas: ["Problema","Objetivo general","Objetivos específicos","Pregunta de investigación","Hipótesis","Variables"]
+
+Originalidad y aporte:
   peso: 8
-  pistas: ["Estado del arte","Marco teórico"]
-Solidez metodológica:
+  pistas: ["Originalidad","Novedad","Aporte","Innovación","Vacío de conocimiento"]
+
+Marco teórico y estado del arte:
+  peso: 12
+  pistas: ["Marco teórico","Estado del arte","Antecedentes","Teoría","Autores","Estudios recientes"]
+
+Metodología:
   peso: 14
-  pistas: ["Metodología","Diseño y enfoque","Técnicas de análisis"]
+  pistas: ["Metodología","Diseño","Enfoque","Cuantitativo","Cualitativo","Mixto","Técnicas","Análisis","Procedimiento"]
+
 Calidad de datos / muestra:
   peso: 10
-  pistas: ["Datos","Muestra","Muestreo","Instrumentos"]
+  pistas: ["Muestra","Muestreo","Población","Instrumentos","Recolección de datos","Validación","Alfa de Cronbach"]
+
 Factibilidad y cronograma:
-  peso: 8
-  pistas: ["Cronograma","Plan de actividades"]
-Consideraciones éticas:
   peso: 6
-  pistas: ["Ética"]
-Impacto esperado:
+  pistas: ["Cronograma","Plan de actividades","Factibilidad","Recursos","Etapas","Responsables"]
+
+Impacto y difusión:
   peso: 8
-  pistas: ["Resultados esperados","Impacto"]
-Plan de difusión / transferencia:
-  peso: 6
-  pistas: ["Plan de difusión"]
+  pistas: ["Impacto","Resultados esperados","Impacto social","Impacto académico","Difusión","Publicaciones","Congreso","Transferencia"]
+
 Presupuesto y sostenibilidad:
   peso: 6
-  pistas: ["Presupuesto","Recursos"]
-Alineación institucional y normativa:
-  peso: 6
-  pistas: ["Institucional","Lineamientos","Normativa"]
+  pistas: ["Presupuesto","Financiamiento","Costos","Gastos","Sostenibilidad","Recursos"]
+
+Alineación institucional:
+  peso: 4
+  pistas: ["PEI","Plan Estratégico","Líneas de investigación","Normativa","Ordenanza"]
+
 Bibliografía actualizada:
-  peso: 8
-  pistas: ["Bibliografía","Referencias","2020","2021","2022","2023","2024","2025"]
+  peso: 4
+  pistas: ["Bibliografía","Referencias","2021","2022","2023","2024","2025","2026"]
