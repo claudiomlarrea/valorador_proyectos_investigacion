@@ -298,6 +298,26 @@ p, label, span {
 [data-baseweb="slider"] {
     color: #064a3f;
 }
+/* Botones de descarga (Excel / Word) */
+[data-testid="stDownloadButton"] button {
+    background-color: #064a3f !important;
+    color: white !important;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+}
+
+[data-testid="stDownloadButton"] button:hover {
+    background-color: #0B6B5D !important;
+}
+
+/* Botón de upload */
+[data-testid="stFileUploader"] button {
+    background-color: #064a3f !important;
+    color: white !important;
+    border-radius: 8px;
+    border: none;
+}
 
 </style>
 """, unsafe_allow_html=True)
