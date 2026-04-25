@@ -344,7 +344,7 @@ div[class="header-uccuyo"] h3 {
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<div style='
+<div class='header-uccuyo' style='
     background: linear-gradient(90deg, #0b5d4b, #177e6c);
     padding: 30px;
     border-radius: 15px;
@@ -352,17 +352,15 @@ st.markdown("""
     max-width: 900px;
 '>
 
-    <div style='color: white; font-size: 40px; font-weight: 700;'>
-        Universidad Católica de Cuyo
-    </div>
+    <h1>Universidad Católica de Cuyo</h1>
 
-    <div style='color: white; font-size: 22px; margin-top:10px;'>
+    <h2 style='margin-top:10px;'>
         Secretaría de Investigación
-    </div>
+    </h2>
 
-    <div style='color: #d6f2ec; font-size: 18px; margin-top:5px;'>
+    <h3 style='margin-top:5px;'>
         Consejo de Investigación
-    </div>
+    </h3>
 
 </div>
 """, unsafe_allow_html=True)
