@@ -245,6 +245,62 @@ def make_word(scores, porcentaje, resultado, nombre):
 # ================= UI =================
 
 st.set_page_config(page_title=APP_TITLE, layout="wide")
+st.markdown("""
+<style>
+
+/* Fondo general */
+.stApp {
+    background-color: #E6E6E6;
+}
+
+/* Título principal */
+h1 {
+    color: #064a3f !important;
+    font-weight: 700;
+}
+
+/* Subtítulos */
+h2, h3, h4 {
+    color: #064a3f !important;
+}
+
+/* Texto */
+p, label, span {
+    color: black !important;
+}
+
+/* Caja de carga */
+[data-testid="stFileUploader"] {
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+/* Alertas (éxito, info, warning) */
+[data-testid="stAlert"] {
+    border-radius: 10px;
+}
+
+/* Botones */
+.stButton button {
+    background-color: #064a3f;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+}
+
+.stButton button:hover {
+    background-color: #0B6B5D;
+}
+
+/* Sliders */
+[data-baseweb="slider"] {
+    color: #064a3f;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 st.title(APP_TITLE)
 st.caption(APP_VERSION)
