@@ -253,42 +253,50 @@ st.markdown("""
     background-color: #E6E6E6;
 }
 
-/* Título principal */
+/* Títulos generales */
 h1 {
     color: #064a3f;
 }
 
-/* Subtítulos */
 h2, h3, h4 {
-    color: #064a3f !important;
+    color: #064a3f;
 }
 
-/* Texto */
+/* Texto general */
 p, label, span {
-    color: black !important;
-}
-.header-uccuyo h1,
-.header-uccuyo h2,
-.header-uccuyo h3,
-div.header-uccuyo h1,
-div.header-uccuyo h2,
-div.header-uccuyo h3 {
-    color: white !important;
+    color: black;
 }
 
-/* Caja de carga */
+/* ================= HEADER UCCUYO ================= */
+
+.header-uccuyo h1 {
+    color: white !important;
+    font-size: 40px;
+    font-weight: 700;
+}
+
+.header-uccuyo h2 {
+    color: white !important;
+    font-weight: 500;
+}
+
+.header-uccuyo h3 {
+    color: #d6f2ec !important;
+    font-weight: 400;
+}
+
+/* ================= UI ================= */
+
 [data-testid="stFileUploader"] {
     background-color: white;
     border-radius: 10px;
     padding: 15px;
 }
 
-/* Alertas (éxito, info, warning) */
 [data-testid="stAlert"] {
     border-radius: 10px;
 }
 
-/* Botones */
 .stButton button {
     background-color: #064a3f;
     color: white;
@@ -301,24 +309,17 @@ div.header-uccuyo h3 {
     background-color: #0B6B5D;
 }
 
-/* Sliders */
-[data-baseweb="slider"] {
-    color: #064a3f;
-}
-/* Botones de descarga (Excel / Word) */
 [data-testid="stDownloadButton"] button {
     background-color: #064a3f !important;
     color: white !important;
     border-radius: 8px;
     border: none;
-    font-weight: 600;
 }
 
 [data-testid="stDownloadButton"] button:hover {
     background-color: #0B6B5D !important;
 }
 
-/* Botón de upload */
 [data-testid="stFileUploader"] button {
     background-color: #064a3f !important;
     color: white !important;
