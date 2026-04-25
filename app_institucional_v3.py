@@ -334,7 +334,8 @@ st.markdown("""
     background: linear-gradient(90deg, #0b5d4b, #177e6c);
     padding: 30px;
     border-radius: 15px;
-    margin-bottom: 20px;
+    margin: 0 auto 30px auto;
+    max-width: 900px;
 '>
     <h1>Universidad Católica de Cuyo</h1>
     <h2>Secretaría de Investigación</h2>
