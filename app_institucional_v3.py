@@ -253,18 +253,15 @@ st.markdown("""
     background-color: #E6E6E6;
 }
 
-/* Títulos generales */
-h1 {
+/* Títulos generales EXCEPTO header */
+h1:not(.header-uccuyo h1) {
     color: #064a3f;
 }
 
-h2, h3, h4 {
+h2:not(.header-uccuyo h2),
+h3:not(.header-uccuyo h3),
+h4 {
     color: #064a3f;
-}
-
-/* Texto general */
-p, label, span {
-    color: black;
 }
 
 /* ================= HEADER UCCUYO ================= */
@@ -352,13 +349,13 @@ st.markdown("""
     max-width: 900px;
 '>
 
-    <h1>Universidad Católica de Cuyo</h1>
+    <h1 style='color: white;'>Universidad Católica de Cuyo</h1>
 
-    <h2 style='margin-top:10px;'>
+    <h2 style='color: white; margin-top:10px;'>
         Secretaría de Investigación
     </h2>
 
-    <h3 style='margin-top:5px;'>
+    <h3 style='color: #d6f2ec; margin-top:5px;'>
         Consejo de Investigación
     </h3>
 
