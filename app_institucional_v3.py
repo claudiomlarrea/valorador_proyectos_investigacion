@@ -255,8 +255,7 @@ st.markdown("""
 
 /* Título principal */
 h1 {
-    color: #064a3f !important;
-    font-weight: 700;
+    color: #064a3f;
 }
 
 /* Subtítulos */
@@ -267,6 +266,14 @@ h2, h3, h4 {
 /* Texto */
 p, label, span {
     color: black !important;
+}
+.header-uccuyo h1,
+.header-uccuyo h2,
+.header-uccuyo h3,
+div.header-uccuyo h1,
+div.header-uccuyo h2,
+div.header-uccuyo h3 {
+    color: white !important;
 }
 
 /* Caja de carga */
@@ -320,6 +327,19 @@ p, label, span {
 }
 
 </style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class='header-uccuyo' style='
+    background: linear-gradient(90deg, #0b5d4b, #177e6c);
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+'>
+    <h1>Universidad Católica de Cuyo</h1>
+    <h2>Secretaría de Investigación</h2>
+    <h3>Consejo de Investigación</h3>
+</div>
 """, unsafe_allow_html=True)
 
 st.title(APP_TITLE)
