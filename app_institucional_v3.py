@@ -269,14 +269,22 @@ p, label, span {
 
 /* ================= HEADER UCCUYO ================= */
 
-.header-uccuyo h1 {
+/* 🔥 HEADER UCCUYO FORZADO (SOLUCIÓN FINAL) */
+.header-uccuyo h1,
+.header-uccuyo h2,
+.header-uccuyo h3,
+div.header-uccuyo h1,
+div.header-uccuyo h2,
+div.header-uccuyo h3 {
     color: white !important;
+}
+
+.header-uccuyo h1 {
     font-size: 40px;
     font-weight: 700;
 }
 
 .header-uccuyo h2 {
-    color: white !important;
     font-weight: 500;
 }
 
@@ -326,7 +334,12 @@ p, label, span {
     border-radius: 8px;
     border: none;
 }
-
+/* 🔥 FORZAR HEADER BLANCO (máxima prioridad) */
+div[class="header-uccuyo"] h1,
+div[class="header-uccuyo"] h2,
+div[class="header-uccuyo"] h3 {
+    color: white !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -337,6 +350,7 @@ st.markdown("""
     border-radius: 15px;
     margin: 0 auto 30px auto;
     max-width: 900px;
+    color: white;
 '>
     <h1>Universidad Católica de Cuyo</h1>
     <h2>Secretaría de Investigación</h2>
