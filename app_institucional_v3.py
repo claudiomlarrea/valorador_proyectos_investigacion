@@ -367,12 +367,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-    <h1>Universidad Católica de Cuyo</h1>
-    <h2>Secretaría de Investigación</h2>
-    <h3>Consejo de Investigación</h3>
-</div>
-""", unsafe_allow_html=True)
-
 st.title(APP_TITLE)
 st.caption(APP_VERSION)
 
