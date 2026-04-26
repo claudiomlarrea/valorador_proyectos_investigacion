@@ -314,6 +314,10 @@ div.header-uccuyo h3 {
     background-color: #0B6B5D;
 }
 
+/* 🔥 TEXTO BLANCO REAL EN BOTONES */
+.stButton button span {
+    color: white !important;
+}
 [data-testid="stDownloadButton"] button {
     background-color: #064a3f !important;
     color: white !important;
@@ -335,6 +339,13 @@ div.header-uccuyo h3 {
 div[class="header-uccuyo"] h1,
 div[class="header-uccuyo"] h2,
 div[class="header-uccuyo"] h3 {
+    color: white !important;
+}
+
+/* 🔥 SOLUCIÓN FINAL BOTONES (SIN ROMPER TEXTO GENERAL) */
+.stButton button span,
+[data-testid="stDownloadButton"] button span,
+[data-testid="stFileUploader"] button span {
     color: white !important;
 }
 </style>
