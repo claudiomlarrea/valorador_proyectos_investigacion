@@ -292,12 +292,11 @@ div.header-uccuyo h3 {
 
 /* ================= UI ================= */
 
-/* 🔥 SOLUCIÓN DEFINITIVA TEXTO GENERAL */
-.stApp,
-.stApp div,
-.stApp span,
+/* 🔥 TEXTO GENERAL (SIN ROMPER STREAMLIT) */
 .stApp p,
-.stApp label {
+.stApp label,
+.stApp div:not([data-testid]),
+.stApp span:not([data-testid]) {
     color: #1a1a1a !important;
 }
 
@@ -356,6 +355,12 @@ div[class="header-uccuyo"] h3 {
 [data-testid="stDownloadButton"] button span,
 [data-testid="stFileUploader"] button span {
     color: white !important;
+}
+
+/* 🔥 FIX UPLOAD STREAMLIT (CRÍTICO) */
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] div {
+    color: #1a1a1a !important;
 }
 </style>
 """, unsafe_allow_html=True)
