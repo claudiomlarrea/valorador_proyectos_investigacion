@@ -321,7 +321,7 @@ div.header-uccuyo h3 {
 .stButton button span {
     color: white !important;
 }
-="stDownloadButton"] button {
+[data-testid="stDownloadButton"] button {
     background-color: #064a3f !important;
     color: white !important;
     border-radius: 8px;
