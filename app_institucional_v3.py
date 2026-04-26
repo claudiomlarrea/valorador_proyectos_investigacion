@@ -248,63 +248,50 @@ st.set_page_config(page_title=APP_TITLE, layout="wide")
 st.markdown("""
 <style>
 
-/* Fondo general */
+/* ================= FONDO ================= */
 .stApp {
     background-color: #E6E6E6;
 }
 
-/* 🔥 TÍTULOS (excluye header correctamente) */
-.stApp h1:not(.header-uccuyo h1),
-.stApp h2:not(.header-uccuyo h2),
-.stApp h3:not(.header-uccuyo h3),
-.stApp h4 {
+/* ================= TÍTULOS ================= */
+.stApp h1, .stApp h2, .stApp h3, .stApp h4 {
     color: #064a3f;
 }
 
-/* ================= HEADER UCCUYO ================= */
-
-/* 🔥 HEADER UCCUYO FORZADO (SOLUCIÓN FINAL) */
-.header-uccuyo h1,
-.header-uccuyo h2,
-.header-uccuyo h3,
-div.header-uccuyo h1,
-div.header-uccuyo h2,
-div.header-uccuyo h3 {
+/* ================= HEADER ================= */
+.header-uccuyo {
+    color: white !important;
+}
+.header-uccuyo * {
     color: white !important;
 }
 
-.header-uccuyo h1 {
-    font-size: 40px;
-    font-weight: 700;
-}
-
-.header-uccuyo h2 {
-    font-weight: 500;
-}
-
-.header-uccuyo h3 {
-    color: #d6f2ec !important;
-    font-weight: 400;
-}
-
-/* ================= UI ================= */
-
-/* 🔥 TEXTO GENERAL CONTROLADO */
+/* ================= TEXTO GENERAL ================= */
 .stApp p,
 .stApp label {
     color: #1a1a1a !important;
 }
 
+/* ================= UPLOADER ================= */
 [data-testid="stFileUploader"] {
     background-color: white;
     border-radius: 10px;
     padding: 15px;
 }
 
-[data-testid="stAlert"] {
-    border-radius: 10px;
+/* 🔥 BOTÓN UPLOAD (CORRECTO) */
+[data-testid="stFileUploader"] button[kind="secondary"] {
+    background-color: #064a3f !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: none !important;
 }
 
+[data-testid="stFileUploader"] button[kind="secondary"]:hover {
+    background-color: #0B6B5D !important;
+}
+
+/* ================= BOTONES GENERALES ================= */
 .stButton button {
     background-color: #064a3f;
     color: white;
@@ -317,10 +304,7 @@ div.header-uccuyo h3 {
     background-color: #0B6B5D;
 }
 
-/* 🔥 TEXTO BLANCO REAL EN BOTONES */
-.stButton button span {
-    color: white !important;
-}
+/* ================= DOWNLOAD ================= */
 [data-testid="stDownloadButton"] button {
     background-color: #064a3f !important;
     color: white !important;
@@ -332,40 +316,18 @@ div.header-uccuyo h3 {
     background-color: #0B6B5D !important;
 }
 
-[data-testid="stFileUploader"] button {
-    background-color: #064a3f !important;
-    color: white !important;
-    border-radius: 8px;
-    border: none;
-}
-
-/* 🔥 FIX DEFINITIVO BOTONES (texto + iconos) */
+/* 🔥 TEXTO BLANCO EN TODOS LOS BOTONES */
 .stButton button *,
 [data-testid="stDownloadButton"] button *,
 [data-testid="stFileUploader"] button * {
     color: white !important;
 }
-/* 🔥 FORZAR HEADER BLANCO (máxima prioridad) */
-div[class="header-uccuyo"] h1,
-div[class="header-uccuyo"] h2,
-div[class="header-uccuyo"] h3 {
-    color: white !important;
+
+/* ================= ALERTAS ================= */
+[data-testid="stAlert"] {
+    border-radius: 10px;
 }
 
-/* 🔥 TEXTO INTERNO DEL UPLOAD (sin romper botón) */
-[data-testid="stFileUploader"] small,
-[data-testid="stFileUploader"] p {
-    color: #1a1a1a !important;
-}
-/* 🔥 HEADER PISA TODO */
-.header-uccuyo,
-.header-uccuyo * {
-    color: white !important;
-}
-/* 🔥 LIMPIAR FONDO OSCURO DEL UPLOAD */
-[data-testid="stFileUploader"] section {
-    background-color: transparent !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
