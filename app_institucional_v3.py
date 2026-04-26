@@ -362,6 +362,10 @@ div[class="header-uccuyo"] h3 {
 .header-uccuyo * {
     color: white !important;
 }
+/* 🔥 LIMPIAR FONDO OSCURO DEL UPLOAD */
+[data-testid="stFileUploader"] section {
+    background-color: transparent !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
