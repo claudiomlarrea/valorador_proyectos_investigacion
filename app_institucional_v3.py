@@ -292,6 +292,15 @@ div.header-uccuyo h3 {
 
 /* ================= UI ================= */
 
+/* 🔥 SOLUCIÓN DEFINITIVA TEXTO GENERAL */
+.stApp,
+.stApp div,
+.stApp span,
+.stApp p,
+.stApp label {
+    color: #1a1a1a !important;
+}
+
 [data-testid="stFileUploader"] {
     background-color: white;
     border-radius: 10px;
