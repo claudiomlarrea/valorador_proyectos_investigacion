@@ -253,14 +253,11 @@ st.markdown("""
     background-color: #E6E6E6;
 }
 
-/* Títulos generales EXCEPTO header */
-h1:not(.header-uccuyo h1) {
-    color: #064a3f;
-}
-
-h2:not(.header-uccuyo h2),
-h3:not(.header-uccuyo h3),
-h4 {
+/* 🔥 TÍTULOS (excluye header correctamente) */
+.stApp h1:not(.header-uccuyo h1),
+.stApp h2:not(.header-uccuyo h2),
+.stApp h3:not(.header-uccuyo h3),
+.stApp h4 {
     color: #064a3f;
 }
 
@@ -292,11 +289,9 @@ div.header-uccuyo h3 {
 
 /* ================= UI ================= */
 
-/* 🔥 TEXTO GENERAL (SIN ROMPER STREAMLIT) */
+/* 🔥 TEXTO GENERAL CONTROLADO */
 .stApp p,
-.stApp label,
-.stApp div:not([data-testid]),
-.stApp span:not([data-testid]) {
+.stApp label {
     color: #1a1a1a !important;
 }
 
@@ -350,17 +345,15 @@ div[class="header-uccuyo"] h3 {
     color: white !important;
 }
 
-/* 🔥 SOLUCIÓN FINAL BOTONES (SIN ROMPER TEXTO GENERAL) */
-.stButton button span,
-[data-testid="stDownloadButton"] button span,
-[data-testid="stFileUploader"] button span {
-    color: white !important;
-}
-
-/* 🔥 FIX UPLOAD STREAMLIT (CRÍTICO) */
-[data-testid="stFileUploader"] span,
-[data-testid="stFileUploader"] div {
+/* 🔥 TEXTO INTERNO DEL UPLOAD (sin romper botón) */
+[data-testid="stFileUploader"] small,
+[data-testid="stFileUploader"] p {
     color: #1a1a1a !important;
+}
+/* 🔥 HEADER PISA TODO */
+.header-uccuyo,
+.header-uccuyo * {
+    color: white !important;
 }
 </style>
 """, unsafe_allow_html=True)
