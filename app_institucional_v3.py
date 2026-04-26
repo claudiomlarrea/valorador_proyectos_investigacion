@@ -321,7 +321,7 @@ div.header-uccuyo h3 {
 .stButton button span {
     color: white !important;
 }
-[data-testid="stDownloadButton"] button {
+="stDownloadButton"] button {
     background-color: #064a3f !important;
     color: white !important;
     border-radius: 8px;
@@ -337,6 +337,13 @@ div.header-uccuyo h3 {
     color: white !important;
     border-radius: 8px;
     border: none;
+}
+
+/* 🔥 FIX DEFINITIVO BOTONES (texto + iconos) */
+.stButton button *,
+[data-testid="stDownloadButton"] button *,
+[data-testid="stFileUploader"] button * {
+    color: white !important;
 }
 /* 🔥 FORZAR HEADER BLANCO (máxima prioridad) */
 div[class="header-uccuyo"] h1,
