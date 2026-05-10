@@ -266,6 +266,15 @@ st.markdown("""
     color: white !important;
 }
 
+/* Ancho completo dentro del bloque principal (antes: max-width 900px inline centraba el banner) */
+.header-uccuyo.banner-ucc-inst {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
 /* ================= TEXTO GENERAL ================= */
 .stApp p,
 .stApp label {
@@ -332,7 +341,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown(
-    """<div class="header-uccuyo" style="background: linear-gradient(90deg, #0b5d4b, #177e6c); padding: 30px; border-radius: 15px; margin: 0 auto 30px auto; max-width: 900px;">
+    """<div class="header-uccuyo banner-ucc-inst" style="background: linear-gradient(90deg, #0b5d4b, #177e6c); padding: 30px; border-radius: 15px; margin: 0 0 24px 0;">
 <h1 style="margin:0;">Universidad Católica de Cuyo</h1>
 <h2 style="margin-top:10px;">Secretaría de Investigación</h2>
 <h3 style="margin-top:5px;">Consejo de Investigación</h3>
