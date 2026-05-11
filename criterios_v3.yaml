@@ -1,0 +1,121 @@
+# Criterios valorador ex ante — app_institucional_v3 (v3.3)
+# Suma de pesos: 100. No modificar pesos ni pistas sin recalibrar ejemplos (p. ej. Bruno).
+# El código valida contra el respaldo interno; si hay divergencias, usa el respaldo.
+
+"Pertinencia y relevancia":
+  peso: 10
+  pistas:
+    - justificación
+    - relevancia
+    - problema
+    - fundamentación
+    - necesidad
+
+"Claridad del problema y objetivos":
+  peso: 10
+  pistas:
+    - objetivo general
+    - objetivos específicos
+    - pregunta de investigación
+    - problema
+    - hipótesis
+
+"Originalidad / aporte":
+  peso: 8
+  pistas:
+    - estado del arte
+    - marco teórico
+    - antecedentes
+    - novedad
+    - aporte
+    - vacancia
+
+"Solidez metodológica":
+  peso: 14
+  pistas:
+    - metodología
+    - diseño
+    - enfoque
+    - técnicas
+    - análisis de datos
+    - método
+
+"Calidad de datos / muestra":
+  peso: 10
+  pistas:
+    - muestra
+    - muestreo
+    - población
+    - instrumento
+    - datos
+    - recolección
+
+"Factibilidad y cronograma":
+  peso: 8
+  pistas:
+    - cronograma
+    - plan de actividades
+    - factibilidad
+    - recursos
+    - viabilidad
+    - etapas
+
+"Consideraciones éticas":
+  peso: 6
+  pistas:
+    - ética
+    - consentimiento
+    - confidencialidad
+    - comité de ética
+    - resguardo de datos
+
+"Impacto esperado":
+  peso: 8
+  pistas:
+    - impacto
+    - resultados esperados
+    - beneficios
+    - relevancia social
+    - aportes
+
+"Plan de difusión / transferencia":
+  peso: 6
+  pistas:
+    - difusión
+    - transferencia
+    - publicaciones
+    - divulgación
+    - congreso
+    - artículo
+
+"Presupuesto y sostenibilidad":
+  peso: 6
+  pistas:
+    - presupuesto
+    - financiamiento
+    - costos
+    - recursos
+    - gastos
+    - sostenibilidad
+
+"Alineación institucional y normativa":
+  peso: 6
+  pistas:
+    - institucional
+    - normativa
+    - lineamientos
+    - universidad
+    - facultad
+    - plan estratégico
+
+"Bibliografía actualizada":
+  peso: 8
+  pistas:
+    - bibliografía
+    - referencias
+    - "2021"
+    - "2022"
+    - "2023"
+    - "2024"
+    - "2025"
+    - "2026"

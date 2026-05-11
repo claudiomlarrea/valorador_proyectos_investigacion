@@ -1,9 +1,12 @@
 import io
 import re
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 import pandas as pd
 import streamlit as st
+import yaml
 
 # Lectura de archivos
 try:
@@ -22,10 +25,12 @@ except Exception:
     Document = None
 
 
+_APP_DIR = Path(__file__).resolve().parent
+
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
 APP_VERSION = "v3.3 diferenciación real por contenido"
 
-CRITERIOS = {
+_CRITERIOS_V3_FALLBACK = {
     "Pertinencia y relevancia": {
         "peso": 10,
         "pistas": ["justificación", "relevancia", "problema", "fundamentación", "necesidad"]
@@ -75,6 +80,52 @@ CRITERIOS = {
         "pistas": ["bibliografía", "referencias", "2021", "2022", "2023", "2024", "2025", "2026"]
     },
 }
+
+
+def _criterios_v3_validados_desde_yaml(data: Any) -> Optional[Dict]:
+    """Si el YAML coincide con el respaldo (pesos y pistas), devuelve dict ordenado; si no, None."""
+    if not isinstance(data, dict):
+        return None
+    if "criterios" in data and isinstance(data["criterios"], dict):
+        data = data["criterios"]
+    fb = _CRITERIOS_V3_FALLBACK
+    if set(data.keys()) != set(fb.keys()):
+        return None
+    total = sum(int((data[k] or {}).get("peso", 0)) for k in data)
+    if total != sum(int(v["peso"]) for v in fb.values()):
+        return None
+    for nombre, meta in fb.items():
+        cm = data.get(nombre)
+        if not isinstance(cm, dict):
+            return None
+        if int(cm.get("peso", -1)) != int(meta["peso"]):
+            return None
+        pistas_yaml = cm.get("pistas")
+        if not isinstance(pistas_yaml, list):
+            return None
+        pistas_yaml_s = [str(x) for x in pistas_yaml]
+        pistas_fb_s = [str(x) for x in meta["pistas"]]
+        if pistas_yaml_s != pistas_fb_s:
+            return None
+    # Mismo contenido que el fallback → orden estable de la UI
+    return {k: dict(data[k]) for k in fb.keys()}
+
+
+def _load_criterios_v3() -> dict:
+    path = _APP_DIR / "criterios_v3.yaml"
+    if not path.is_file():
+        return {k: dict(v) for k, v in _CRITERIOS_V3_FALLBACK.items()}
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {k: dict(v) for k, v in _CRITERIOS_V3_FALLBACK.items()}
+    validado = _criterios_v3_validados_desde_yaml(raw)
+    if validado is not None:
+        return validado
+    return {k: dict(v) for k, v in _CRITERIOS_V3_FALLBACK.items()}
+
+
+CRITERIOS = _load_criterios_v3()
 
 
 def categoria(p):
