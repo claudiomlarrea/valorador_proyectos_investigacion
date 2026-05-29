@@ -25,10 +25,12 @@ except Exception:
     Document = None
 
 
+from valoracion_contenido import build_section_slices, score_project
+
 _APP_DIR = Path(__file__).resolve().parent
 
 APP_TITLE = "UCCuyo · Valorador de Proyectos de Investigación"
-APP_VERSION = "v3.3 diferenciación real por contenido"
+APP_VERSION = "v4.1 plantillas reales UCC + respaldo informe cátedra"
 
 _CRITERIOS_V3_FALLBACK = {
     "Pertinencia y relevancia": {
@@ -153,97 +155,6 @@ def parse_docx(file_bytes):
         return ""
     doc = DocxDocument(io.BytesIO(file_bytes))
     return "\n".join(p.text for p in doc.paragraphs)
-
-
-def contar_ocurrencias(texto, termino):
-    return texto.lower().count(termino.lower())
-
-
-def extraer_evidencia(texto, pistas, max_items=2):
-    texto_low = texto.lower()
-    resultados = []
-
-    for pista in pistas:
-        idx = texto_low.find(pista.lower())
-        if idx != -1:
-            inicio = max(0, idx - 80)
-            fin = min(len(texto), idx + 180)
-            frag = texto[inicio:fin].replace("\n", " ").strip()
-            if frag not in resultados:
-                resultados.append(frag)
-        if len(resultados) >= max_items:
-            break
-
-    return resultados
-
-
-def score_criterio(texto, criterio, meta):
-    """
-    Genera un puntaje inicial variable y mucho más fino.
-    Nunca deja todos iguales salvo que los proyectos sean realmente casi idénticos.
-    """
-    peso = meta["peso"]
-    pistas = meta["pistas"]
-    texto_low = texto.lower()
-
-    # 1) cuántas pistas distintas aparecen
-    hits_distintos = sum(1 for p in pistas if p.lower() in texto_low)
-
-    # 2) cuántas ocurrencias totales hay
-    ocurrencias_totales = sum(contar_ocurrencias(texto, p) for p in pistas)
-
-    # 3) densidad del texto (cantidad total de palabras)
-    n_palabras = max(1, len(texto.split()))
-
-    # 4) bonus por desarrollo textual general del proyecto
-    if n_palabras >= 5000:
-        bonus_longitud = 0.12
-    elif n_palabras >= 2500:
-        bonus_longitud = 0.08
-    elif n_palabras >= 1200:
-        bonus_longitud = 0.05
-    else:
-        bonus_longitud = 0.02
-
-    # 5) score base por criterio
-    proporcion_hits = hits_distintos / max(1, len(pistas))
-    factor_ocurrencias = min(1.0, ocurrencias_totales / max(2, len(pistas) * 2))
-
-    # base entre 35% y 90% del peso
-    score_relativo = 0.15 + (proporcion_hits * 0.35) + (factor_ocurrencias * 0.30) + bonus_longitud
-
-    # Ajuste especial para bibliografía actualizada
-    if criterio == "Bibliografía actualizada":
-        years = re.findall(r"\b(2021|2022|2023|2024|2025|2026)\b", texto)
-        years_unicos = len(set(years))
-        score_relativo += min(0.15, years_unicos * 0.03)
-
-    # Ajuste especial para presupuesto: detectar números o moneda
-    if criterio == "Presupuesto y sostenibilidad":
-        if re.search(r"(\$|usd|ars|presupuesto|costos|gastos|financiamiento)", texto_low):
-            score_relativo += 0.08
-        if re.search(r"\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?\b", texto):
-            score_relativo += 0.05
-
-    # Ajuste especial para metodología
-    if criterio == "Solidez metodológica":
-        if re.search(r"(cuantitativ|cualitativ|mixto|estadístic|entrevista|encuesta|análisis)", texto_low):
-            score_relativo += 0.08
-
-    # Ajuste especial para muestra/datos
-    if criterio == "Calidad de datos / muestra":
-        if re.search(r"(n=|muestra|muestreo|población|casos|participantes|instrumento)", texto_low):
-            score_relativo += 0.08
-
-    # Limitar entre 35% y 95%
-    score_relativo = max(0.35, min(0.95, score_relativo))
-
-    valor = round(peso * score_relativo)
-
-    # que nunca sea 0 si el criterio existe, pero tampoco siempre igual
-    valor = max(1, min(peso, valor))
-
-    return valor, hits_distintos, ocurrencias_totales
 
 
 def make_excel(scores, porcentaje, resultado, nombre):
@@ -422,7 +333,43 @@ if texto.strip():
 else:
     st.warning("Se cargó el archivo, pero no se extrajo texto visible.")
 
+_scored = score_project(texto, CRITERIOS)
+if len(_scored) == 2:
+    criterion_results, section_slices = _scored
+    _, doc_mode = build_section_slices(texto)
+else:
+    criterion_results, section_slices, doc_mode = _scored
+
+st.info(
+    f"**Modo detectado:** `{doc_mode}` — "
+    "Proyecto ex ante (plantilla convocatoria) o informe final de cátedra. "
+    "Si los apartados no coinciden, se usa texto propio de todo el documento (sin consignas)."
+)
+if doc_mode == "informe_catedra":
+    st.warning(
+        "Este archivo parece un **informe final de cátedra**, no un proyecto ex ante de convocatoria. "
+        "La rúbrica del Anexo IV está pensada para la **plantilla de presentación de proyecto**. "
+        "El puntaje automático es orientativo; conviene revisar con los sliders."
+    )
+
+with st.expander("Diagnóstico de apartados (contenido propio vs consignas)", expanded=False):
+    if not section_slices:
+        st.write("No se detectaron encabezados de apartado; se evalúa el texto como bloque único.")
+    else:
+        rows = []
+        for key, sl in sorted(section_slices.items(), key=lambda x: x[0]):
+            rows.append({
+                "Apartado": key,
+                "Palabras (propias)": sl.word_count_own,
+                "% líneas consigna": round(sl.consigna_ratio * 100, 1),
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
 st.subheader("Evaluación")
+st.caption(
+    "v4.1: contenido propio por apartado (consignas no suman). "
+    "Probar en local: `python3 -m streamlit run app_institucional_v3.py` → http://localhost:8501"
+)
 
 scores = {}
 total_max = sum(meta["peso"] for meta in CRITERIOS.values())
@@ -433,12 +380,14 @@ i = 0
 for criterio, meta in CRITERIOS.items():
     with cols[i % 2]:
         peso = meta["peso"]
-
-        valor_inicial, hits_distintos, ocurrencias_totales = score_criterio(texto, criterio, meta)
-        evidencias = extraer_evidencia(texto, meta["pistas"])
+        cr = criterion_results[criterio]
+        valor_inicial = cr.puntaje
 
         st.markdown(f"**{criterio}** (máx {peso})")
-        st.caption(f"Pistas detectadas: {hits_distintos} | Ocurrencias: {ocurrencias_totales}")
+        st.caption(
+            f"Ítems sustantivos: {cr.checks_ok}/{cr.checks_total} · "
+            f"Palabras propias: {cr.word_own} (orient. {cr.word_target_min}–{cr.word_target_max})"
+        )
 
         val = st.slider(
             f"Puntaje {criterio}",
@@ -448,9 +397,12 @@ for criterio, meta in CRITERIOS.items():
             key=f"s_{i}"
         )
 
-        if evidencias:
-            with st.expander("Evidencia sugerida"):
-                for ev in evidencias:
+        with st.expander("Detalle automático"):
+            for n in cr.notas:
+                st.write(f"• {n}")
+            if cr.evidencias:
+                st.markdown("**Evidencia (contenido propio):**")
+                for ev in cr.evidencias:
                     st.write(ev)
 
         scores[criterio] = val
