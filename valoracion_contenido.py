@@ -20,8 +20,7 @@ MAIN_SECTION_HEADERS: List[Tuple[str, str]] = [
     ("pertinencia", r"(?i)^\s*(?:\d+\.?\s*)?pertinencia\s+y\s+relevancia\b"),
     (
         "problema_objetivos",
-        r"(?i)^\s*(?:\d+\.?\s*)?(?:planteo\s+del\s+)?problema\s+y\s+objetivos\b|"
-        r"(?i)^\s*(?:\d+\.?\s*)?planteo\s+del\s+problema\b",
+        r"(?i)^\s*(?:\d+\.?\s*)?(?:(?:planteo\s+del\s+)?problema\s+y\s+objetivos|planteo\s+del\s+problema)\b",
     ),
     (
         "originalidad",
@@ -29,25 +28,21 @@ MAIN_SECTION_HEADERS: List[Tuple[str, str]] = [
     ),
     (
         "marco_estado",
-        r"(?i)^\s*(?:\d+\.?\s*)?marco\s+te[oó]rico\s+y\s+estado\s+del\s+arte\b|"
-        r"(?i)^\s*(?:\d+\.?\s*)?estado\s+del\s+arte\b",
+        r"(?i)^\s*(?:\d+\.?\s*)?(?:marco\s+te[oó]rico\s+y\s+estado\s+del\s+arte|estado\s+del\s+arte)\b",
     ),
     ("metodologia", r"(?i)^\s*(?:\d+\.?\s*)?metodolog[ií]a\b"),
     (
         "factibilidad",
-        r"(?i)^\s*(?:\d+\.?\s*)?factibilidad\s+y\s+cronograma\b|"
-        r"(?i)^\s*(?:\d+\.?\s*)?factibilidad\b",
+        r"(?i)^\s*(?:\d+\.?\s*)?(?:factibilidad\s+y\s+cronograma|factibilidad)\b",
     ),
     ("etica", r"(?i)^\s*(?:\d+\.?\s*)?(?:consideraciones\s+)?[eé]tica"),
     (
         "impacto_difusion",
-        r"(?i)^\s*(?:\d+\.?\s*)?impacto\s+esperado\b|"
-        r"(?i)^\s*(?:\d+\.?\s*)?impacto\s+esperado\s+y\s+plan\s+de\s+difusi[oó]n",
+        r"(?i)^\s*(?:\d+\.?\s*)?(?:impacto\s+esperado\s+y\s+plan\s+de\s+difusi[oó]n|impacto\s+esperado)\b",
     ),
     (
         "presupuesto",
-        r"(?i)^\s*(?:\d+\.?\s*)?presupuesto(?:\s*,\s*sostenibilidad)?\b|"
-        r"(?i)^\s*(?:\d+\.?\s*)?presupuesto\s*,\s*sostenibilidad\s+y\s+alineaci[oó]n",
+        r"(?i)^\s*(?:\d+\.?\s*)?(?:presupuesto\s*,\s*sostenibilidad\s+y\s+alineaci[oó]n|presupuesto(?:\s*,\s*sostenibilidad)?)\b",
     ),
     ("bibliografia", r"(?i)^\s*(?:\d+\.?\s*)?bibliograf[ií]a\b"),
 ]
@@ -55,12 +50,28 @@ MAIN_SECTION_HEADERS: List[Tuple[str, str]] = [
 # Informe final de cátedra (estructura distinta)
 INFORME_CATEDRA_HEADERS: List[Tuple[str, str]] = [
     ("identificacion", r"(?i)^\s*secci[oó]n\s+1\b"),
-    ("resumen", r"(?i)^\s*secci[oó]n\s+2\b|resumen\s+ejecutivo"),
-    ("factibilidad", r"(?i)^\s*secci[oó]n\s+3\.?\s*1\b|cronograma\s+y\s+objetivos"),
-    ("impacto_difusion", r"(?i)^\s*secci[oó]n\s+3\.?\s*2\b|producci[oó]n\s+y\s+transferencia"),
+    ("resumen", r"(?i)^\s*(?:secci[oó]n\s+2\b|resumen\s+ejecutivo)"),
+    ("factibilidad", r"(?i)^\s*(?:secci[oó]n\s+3\.?\s*1\b|cronograma\s+y\s+objetivos)"),
+    ("impacto_difusion", r"(?i)^\s*(?:secci[oó]n\s+3\.?\s*2\b|producci[oó]n\s+y\s+transferencia)"),
     ("metodologia", r"(?i)^\s*metodolog[ií]a\b"),
     ("presupuesto", r"(?i)^\s*presupuesto\b"),
 ]
+
+
+def _compile_header_patterns(
+    headers: List[Tuple[str, str]],
+) -> List[Tuple[str, re.Pattern[str]]]:
+    compiled: List[Tuple[str, re.Pattern[str]]] = []
+    for key, pat in headers:
+        try:
+            compiled.append((key, re.compile(pat)))
+        except re.error as exc:
+            raise re.error(f"Patrón inválido para sección '{key}': {pat}") from exc
+    return compiled
+
+
+MAIN_SECTION_HEADER_RX = _compile_header_patterns(MAIN_SECTION_HEADERS)
+INFORME_CATEDRA_HEADER_RX = _compile_header_patterns(INFORME_CATEDRA_HEADERS)
 
 SECTION_WORD_RANGES: Dict[str, Tuple[int, int]] = {
     "resumen": (80, 350),
@@ -226,7 +237,9 @@ def extract_own_content(block: str) -> Tuple[str, float]:
     return own, consigna_lines / max(1, total)
 
 
-def _line_is_main_header(line: str, patterns: List[Tuple[str, str]]) -> Tuple[str, str] | None:
+def _line_is_main_header(
+    line: str, patterns: List[Tuple[str, re.Pattern[str]]]
+) -> Tuple[str, str] | None:
     s = line.strip()
     if not s or len(s) > 120:
         return None
@@ -238,8 +251,8 @@ def _line_is_main_header(line: str, patterns: List[Tuple[str, str]]) -> Tuple[st
             s,
         ):
             return None
-    for key, pat in patterns:
-        if re.search(pat, s):
+    for key, rx in patterns:
+        if rx.search(s):
             return key, s
     return None
 
@@ -250,7 +263,9 @@ def split_sections(full_text: str) -> Tuple[Dict[str, str], str]:
         return {}, "proyecto_ex_ante"
 
     mode = detect_doc_mode(text)
-    patterns = INFORME_CATEDRA_HEADERS if mode == "informe_catedra" else MAIN_SECTION_HEADERS
+    patterns = (
+        INFORME_CATEDRA_HEADER_RX if mode == "informe_catedra" else MAIN_SECTION_HEADER_RX
+    )
 
     lines = text.split("\n")
     markers: List[Tuple[int, str]] = []
