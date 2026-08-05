@@ -1,7 +1,10 @@
-streamlit>=1.37
+# Pin versions to avoid Streamlit Cloud crash on Python 3.14:
+# streamlit 1.61 + starlette 1.4 → TypeError GZipResponder missing thread_minimum_size
+streamlit>=1.37,<1.61
+starlette>=0.37,<1.4
 pdfplumber>=0.11
 python-docx>=1.1
 pyyaml>=6.0
-pandas>=2.1
+pandas>=2.1,<3
 xlsxwriter>=3.1
 openpyxl>=3.1
